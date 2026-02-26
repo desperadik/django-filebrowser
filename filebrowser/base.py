@@ -456,7 +456,7 @@ class FileObject():
         version_list = []
         if self.filetype == "Image" and not self.is_version:
             for version in sorted(VERSIONS):
-                version_list.append(os.path.join(self.versions_basedir, self.dirname, self.version_name(version)))
+                version_list.append(self.version_path(version))
         return version_list
 
     def admin_versions(self):
@@ -464,7 +464,7 @@ class FileObject():
         version_list = []
         if self.filetype == "Image" and not self.is_version:
             for version in ADMIN_VERSIONS:
-                version_list.append(os.path.join(self.versions_basedir, self.dirname, self.version_name(version)))
+                version_list.append(self.version_path(version))
         return version_list
 
     def version_name(self, version_suffix, extra_options=None):
@@ -480,10 +480,14 @@ class FileObject():
 
     def version_path(self, version_suffix, extra_options=None):
         "Path to a version (relative to storage location)"  # FIXME: version_path for version?
-        return os.path.join(
+        path = os.path.join(
             self.versions_basedir,
             self.dirname,
             self.version_name(version_suffix, extra_options))
+        # Normalize to a clean relative path to avoid SuspiciousFileOperation
+        # in Django 5.x when path components produce an absolute path (e.g.
+        # when FILEBROWSER_DIRECTORY lacks a trailing slash).
+        return os.path.normpath(path).lstrip(os.sep)
 
     def version_generate(self, version_suffix, extra_options=None):
         "Generate a version"  # FIXME: version_generate for version?
