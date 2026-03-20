@@ -1,7 +1,11 @@
 function FileSubmit(FilePath, FileURL, ThumbURL, FileType) {
     
-    // var input_id=window.name.split("___").join(".");
-    var input_id=window.name.replace(/____/g,'-').split("___").join(".");
+    var input_id;
+    try {
+        input_id = atob(window.name);
+    } catch(e) {
+        input_id = window.name.replace(/____/g,'-').split("___").join(".");
+    }
     var preview_id = 'preview_' + input_id;
     var previewlink_id = 'previewlink_' + input_id;
     var previewimage_id = 'previewimage_' + input_id;

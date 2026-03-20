@@ -19,8 +19,10 @@ var FileBrowser = {
     },
     // show FileBrowser
     show: function(id, href, close_func) {
-        // var id2=String(id).split(".").join("___");
-        var id2=String(id).replace(/\-/g,"____").split(".").join("___");
+        if (id.indexOf('id_') !== 0) {
+            id = 'id_' + id;
+        }
+        var id2=btoa(String(id));
         FBWindow = window.open(href, String(id2), 'height=600,width=1000,resizable=yes,scrollbars=yes');
         FBWindow.focus();
         if (close_func) {
