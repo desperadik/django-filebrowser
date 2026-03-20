@@ -101,7 +101,7 @@ class S3BotoStorageMixin(StorageMixin):
             if allow_overwrite:
                 self.delete(new_file_name)
             else:
-                raise "The destination file '%s' exists and allow_overwrite is False" % new_file_name
+                raise Exception("The destination file '%s' exists and allow_overwrite is False" % new_file_name)
 
         old_key_name = self._encode_name(self._normalize_name(self._clean_name(old_file_name)))
         new_key_name = self._encode_name(self._normalize_name(self._clean_name(new_file_name)))
@@ -109,7 +109,7 @@ class S3BotoStorageMixin(StorageMixin):
         k = self.bucket.copy_key(new_key_name, self.bucket.name, old_key_name)
 
         if not k:
-            raise "Couldn't copy '%s' to '%s'" % (old_file_name, new_file_name)
+            raise Exception("Couldn't copy '%s' to '%s'" % (old_file_name, new_file_name))
 
         self.delete(old_file_name)
 
