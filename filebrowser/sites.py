@@ -35,10 +35,7 @@ from filebrowser.storage import FileSystemStorageMixin
 from filebrowser.templatetags.fb_tags import query_helper
 from filebrowser.utils import convert_filename
 
-try:
-    import json
-except ImportError:
-    from django.utils import simplejson as json
+import json
 
 
 # Add some required methods to FileSystemStorage
