@@ -296,20 +296,25 @@ class FileBrowserSite:
             sorting_order=query.get('ot', DEFAULT_SORTING_ORDER),
             site=self)
 
-        files = []
-        if SEARCH_TRAVERSE and query.get("q"):
-            listing = filelisting.files_walk_filtered()
-        else:
-            listing = filelisting.files_listing_filtered()
-
-        # If we do a search, precompile the search pattern now
-        do_search = query.get("q")
-        if do_search:
-            re_q = re.compile(query.get("q").lower(), re.M)
-
         filter_type = query.get('filter_type')
         filter_date = query.get('filter_date')
         filter_format = query.get('type')
+
+        # If we do a search, precompile the search pattern now.
+        # Plain text, not a regexp: "(" or "+" in a query must not break the page
+        do_search = query.get("q")
+        if do_search:
+            re_q = re.compile(re.escape(do_search.lower()))
+
+        files = []
+        if SEARCH_TRAVERSE and do_search:
+            # names are checked during the walk, FileObjects only for matches
+            listing = filelisting.files_walk_search(
+                lambda name: re_q.search(name.lower()),
+                dirs_only=filter_type == "Folder",
+            )
+        else:
+            listing = filelisting.files_listing_filtered()
 
         for fileobject in listing:
             # date/type filter, format filter
@@ -322,8 +327,9 @@ class FileBrowserSite:
             if do_search and not re_q.search(fileobject.filename.lower()):
                 append = False
             # always show folders with popups
-            # otherwise, one is not able to select/filter files within subfolders
-            if fileobject.filetype == "Folder":
+            # otherwise, one is not able to select/filter files within subfolders.
+            # When searching, folders are filtered by name like files
+            if fileobject.filetype == "Folder" and not do_search:
                 append = True
             # append
             if append:

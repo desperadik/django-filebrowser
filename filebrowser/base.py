@@ -93,10 +93,13 @@ class FileListing():
             return (f for f in dirs + files)
         return []
 
-    def _walk(self, path, filelisting):
+    def _walk(self, path, filelisting, name_filter=None, dirs_only=False):
         """
         Recursively walks the path and collects all files and
         directories.
+
+        name_filter - check by name before FileObject is created (search),
+        dirs_only - collect only directories.
 
         Danger: Symbolic links can create cycles and this function
         ends up in a regression.
@@ -105,18 +108,20 @@ class FileListing():
 
         if dirs:
             for d in dirs:
-                self._walk(os.path.join(path, d), filelisting)
-                filelisting.extend([path_strip(os.path.join(path, d), self.site.directory)])
+                self._walk(os.path.join(path, d), filelisting, name_filter, dirs_only)
+                if name_filter is None or name_filter(d):
+                    filelisting.extend([path_strip(os.path.join(path, d), self.site.directory)])
 
-        if files:
+        if files and not dirs_only:
             for f in files:
-                filelisting.extend([path_strip(os.path.join(path, f), self.site.directory)])
+                if name_filter is None or name_filter(f):
+                    filelisting.extend([path_strip(os.path.join(path, f), self.site.directory)])
 
-    def walk(self):
+    def walk(self, name_filter=None, dirs_only=False):
         "Walk all files for path"
         filelisting = []
         if self.is_folder:
-            self._walk(self.path, filelisting)
+            self._walk(self.path, filelisting, name_filter, dirs_only)
         return filelisting
 
     # Cached results of files_listing_total (without any filters and sorting applied)
@@ -151,6 +156,25 @@ class FileListing():
         if self.sorting_order == "desc":
             files.reverse()
         self._results_walk_total = len(files)
+        return files
+
+    def files_walk_search(self, name_filter, dirs_only=False):
+        """Returns FileObjects for search in walk.
+
+        Names are checked during the walk, so FileObjects, dates and sorting
+        are made only for matches, not for the whole tree.
+        """
+        files = [
+            FileObject(os.path.join(self.site.directory, item), site=self.site)
+            for item in self.walk(name_filter=name_filter, dirs_only=dirs_only)
+        ]
+        if self.filter_func:
+            files = list(filter(self.filter_func, files))
+        if self.sorting_by:
+            files = self.sort_by_attr(files, self.sorting_by)
+        if self.sorting_order == "desc":
+            files.reverse()
+        self._results_walk_filtered = len(files)
         return files
 
     def files_listing_filtered(self):
